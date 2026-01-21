@@ -5,7 +5,7 @@ const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const GEMINI_URL = import.meta.env.VITE_GEMINI_BASE_URL;
 
 const OUTLINE_MODEL = "google/gemini-3-flash-Preview"; 
-const SCRIPT_MODEL = "qwen-3-max"; 
+const SCRIPT_MODEL = "qwen3-max"; 
 
 const callAI = async (prompt: string, temperature: number, config: { url: string, key: string, model: string }) => {
   const response = await fetch(`${config.url}/chat/completions`, {
