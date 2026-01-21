@@ -94,7 +94,7 @@ export const generateScriptSegment = async (
   styleRefText: string
 ) => {
   const totalLength = originalText.length;
-  const totalBatches = 27; /
+  const totalBatches = 27; 
 
   const progressRatio = (batchIndex - 1) / totalBatches;
   let startPos = Math.floor(totalLength * progressRatio);
