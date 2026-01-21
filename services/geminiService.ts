@@ -1,4 +1,4 @@
-onst QWEN_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+const QWEN_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const QWEN_URL = import.meta.env.VITE_BASE_URL;
 
 const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
