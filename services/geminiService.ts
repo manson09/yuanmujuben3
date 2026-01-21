@@ -94,14 +94,17 @@ export const generateScriptSegment = async (
   styleRefText: string
 ) => {
   const totalLength = originalText.length;
-  const totalBatches = 27; 
+  const totalBatches = 27; /
+
   const progressRatio = (batchIndex - 1) / totalBatches;
   let startPos = Math.floor(totalLength * progressRatio);
   
   startPos = Math.max(0, startPos - 5000);
   let endPos = Math.min(totalLength, startPos + 50000); 
 
-const startEp = (batchIndex - 1) * 3 + 1;
+  const dynamicSource = originalText.substring(startPos, endPos);
+
+  const startEp = (batchIndex - 1) * 3 + 1;
   const endEp = batchIndex * 3;
   const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 2500) : '无往期脚本';
 
