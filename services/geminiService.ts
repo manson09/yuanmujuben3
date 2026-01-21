@@ -1,23 +1,19 @@
-const QWEN_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-const QWEN_URL = import.meta.env.VITE_BASE_URL;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const BASE_URL = import.meta.env.VITE_GEMINI_BASE_URL;
 
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_URL = import.meta.env.VITE_GEMINI_BASE_URL;
+const MODEL_ID = "google/gemini-3-flash-Preview"; 
 
-const OUTLINE_MODEL = "google/gemini-3-flash-Preview"; 
-const SCRIPT_MODEL = "qwen3-max"; 
-
-const callAI = async (prompt: string, temperature: number, config: { url: string, key: string, model: string }) => {
-  const response = await fetch(`${config.url}/chat/completions`, {
+const callAI = async (prompt: string, temperature: number) => {
+  const response = await fetch(`${BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${config.key}`,
+      "Authorization": `Bearer ${API_KEY}`,
       "Content-Type": "application/json",
       "HTTP-Referer": window.location.origin,
-      "X-Title": "YuanMu AI Workshop",
+      "X-Title": "YuanMu AI Script Workshop",
     },
     body: JSON.stringify({
-      model: config.model,
+      model: MODEL_ID,
       messages: [{ role: "user", content: prompt }],
       temperature: temperature,
     }),
@@ -25,7 +21,7 @@ const callAI = async (prompt: string, temperature: number, config: { url: string
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error?.message || `请求失败: ${response.status}`);
+    throw new Error(errorData.error?.message || "Gemini 请求失败");
   }
 
   const data = await response.json();
@@ -173,9 +169,5 @@ export const generateScriptSegment = async (
     请根据以上“拟人化写作”策略，输出第 ${startEp} - ${endEp} 集脚本。
   `;
 
-  return await callAI(prompt, 0.95, {
-        url: QWEN_URL,
-        key: QWEN_KEY,
-        model: SCRIPT_MODEL
     });
 };
