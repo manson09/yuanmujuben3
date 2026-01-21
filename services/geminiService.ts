@@ -91,9 +91,6 @@ export const generateScriptSegment = async (
   layoutRefText: string,
   styleRefText: string
 ) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const model = 'gemini-3-pro-preview';
-
   const startEp = (batchIndex - 1) * 3 + 1;
   const endEp = batchIndex * 3;
   const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 12000) : '无往期脚本';
