@@ -1,22 +1,42 @@
+onst QWEN_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+const QWEN_URL = import.meta.env.VITE_BASE_URL;
 
-import { GoogleGenAI } from "@google/genai";
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const GEMINI_URL = import.meta.env.VITE_GEMINI_BASE_URL;
 
-/**
- * 指向性保护协议 (Directional Protection Protocol):
- * 1. 严格标签隔离：使用 XML 风格标签包裹不同性质的输入。
- * 2. 职责唯一性：明确原著是剧情的唯一来源，参考文件禁止贡献任何情节。
- * 3. 进度锚定协议：确保脚本生成不跨越规划阶段，解决节奏过快问题。
- */
+const OUTLINE_MODEL = "google/gemini-3-flash-Preview"; 
+const SCRIPT_MODEL = "qwen-3-max"; 
 
+const callAI = async (prompt: string, temperature: number, config: { url: string, key: string, model: string }) => {
+  const response = await fetch(`${config.url}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${config.key}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "YuanMu AI Workshop",
+    },
+    body: JSON.stringify({
+      model: config.model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: temperature,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.message || `请求失败: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+};
 export const generateStoryOutline = async (
   originalText: string,
   layoutRefText: string,
   styleRefText: string
-) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const model = 'gemini-3-pro-preview';
-  
-  const prompt = `
+) => {     
+ const prompt = `
     你现在是一名专业的漫剧总编剧。你的任务是基于【原著小说内容】创作深度大纲。
     
     【输入指令 - 优先级声明】：
@@ -55,14 +75,12 @@ export const generateStoryOutline = async (
     请开始分析并生成。
   `;
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: prompt,
-    config: {
-      temperature: 0.85,
-      thinkingConfig: { thinkingBudget: 6000 }
-    }
-  });
+  return await callAI(prompt, 0.85, {
+        url: GEMINI_URL,
+        key: GEMINI_KEY,
+        model: OUTLINE_MODEL
+    });
+};
 
   return response.text;
 };
@@ -109,16 +127,9 @@ export const generateScriptSegment = async (
     请根据以上“拟人化写作”策略，输出第 ${startEp} - ${endEp} 集脚本。
   `;
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: prompt,
-    config: {
-      temperature: 0.95, // 提高采样随机性
-      topP: 0.98,
-      topK: 40,
-      thinkingConfig: { thinkingBudget: 8000 }
-    }
-  });
-
-  return response.text;
+  return await callAI(prompt, 0.95, {
+        url: QWEN_URL,
+        key: QWEN_KEY,
+        model: SCRIPT_MODEL
+    });
 };
