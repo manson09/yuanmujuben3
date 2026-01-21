@@ -99,8 +99,8 @@ export const generateScriptSegment = async (
   const progressRatio = (batchIndex - 1) / totalBatches;
   let startPos = Math.floor(totalLength * progressRatio);
   
-  startPos = Math.max(0, startPos - 5000);
-  let endPos = Math.min(totalLength, startPos + 50000); 
+  startPos = Math.max(0, startPos - 10000);
+  let endPos = Math.min(totalLength, startPos + 60000); 
 
   const dynamicSource = originalText.substring(startPos, endPos);
 
@@ -140,9 +140,13 @@ export const generateScriptSegment = async (
      正确示例： ▲ 项云盯着林枫，一字一顿。
      多角色识别：如果场景中有多个角色，必须清晰标注谁在做动作（例如：▲ 项云拔剑，林枫后退）。
      
-         【零秒衔接指令】：
-    - 严格分析下方的 <PREVIOUS_CONTEXT> 最后一段。
-    - 第 ${startEp} 集的第一句台词或第一个动作，必须完美承接上一集的最后一秒，严禁时间跳跃！
+ 【⚠️ 衔接接力棒 - 极其重要】：
+    1. 请仔细阅读 <PREVIOUS_CONTEXT> 的【最后三行文字】。
+    2. 你的输出中，第 ${startEp} 集的第一场戏，必须直接复读上一集最后的那句台词或那个动作，以此作为起点开始接戏。
+    3. 严禁出现“次日”、“镜头一转”或换地方，必须是 0 秒无缝衔接。
+    4. 如果上一集停在“项云举起杯子”，这一集的第一句话必须描述“杯子被项云稳稳停在半空”或接续的动作。
+
+    请开始编写第 ${startEp} - ${endEp} 集脚本：
 
     【当前执行进度与关联约束】：
     1. **阶段定位**：从 <STORY_OUTLINE> 的路线图中确定当前集数对应的原著范围，严禁跨段。
