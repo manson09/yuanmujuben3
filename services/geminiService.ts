@@ -76,10 +76,10 @@ export const generateStoryOutline = async (
   `;
 
   return await callAI(prompt, 0.85, {
-        url: GEMINI_URL,
-        key: GEMINI_KEY,
-        model: OUTLINE_MODEL
-    });
+    url: GEMINI_URL,
+    key: GEMINI_KEY,
+    model: OUTLINE_MODEL
+  });
 };
 
   return response.text;
