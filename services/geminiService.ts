@@ -82,9 +82,6 @@ export const generateStoryOutline = async (
   });
 };
 
-  return response.text;
-};
-
 export const generateScriptSegment = async (
   batchIndex: number,
   mode: 'male' | 'female',
