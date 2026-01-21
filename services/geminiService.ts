@@ -36,6 +36,7 @@ export const generateStoryOutline = async (
   layoutRefText: string,
   styleRefText: string
 ) => {     
+   const outlineSource = originalText.substring(0, 400000); 
  const prompt = `
     你现在是一名专业的漫剧总编剧。你的任务是基于【原著小说内容】创作深度大纲。
     
@@ -92,9 +93,18 @@ export const generateScriptSegment = async (
   layoutRefText: string,
   styleRefText: string
 ) => {
-  const startEp = (batchIndex - 1) * 3 + 1;
+  const totalLength = originalText.length;
+  const totalBatches = 27; 
+  const progressRatio = (batchIndex - 1) / totalBatches;
+  let startPos = Math.floor(totalLength * progressRatio);
+  
+  startPos = Math.max(0, startPos - 5000);
+  let endPos = Math.min(totalLength, startPos + 50000); 
+
+const startEp = (batchIndex - 1) * 3 + 1;
   const endEp = batchIndex * 3;
-  const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 12000) : '无往期脚本';
+  const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 2500) : '无往期脚本';
+
 
   const prompt = `
     任务：编写动漫脚本 第 ${startEp} - ${endEp} 集。
@@ -111,9 +121,18 @@ export const generateScriptSegment = async (
     2. **扩容系数**：将大纲的一个动作点拆解为多维度的视觉描写，确保节奏扎实。
 
     【输入资料】：
-    <ORIGINAL_SOURCE>${originalText.substring(0, 15000)}</ORIGINAL_SOURCE>
-    <STORY_OUTLINE>${outlineText}</STORY_OUTLINE>
-    <PREVIOUS_CONTEXT>${contextHistory}</PREVIOUS_CONTEXT>
+      <ORIGINAL_SOURCE>
+    ${dynamicSource} 
+    </ORIGINAL_SOURCE>
+
+    <STORY_OUTLINE>
+    ${outlineText}
+    </STORY_OUTLINE>
+
+    <PREVIOUS_CONTEXT>
+    ${contextHistory}
+    </PREVIOUS_CONTEXT>
+
     <STYLE_AND_LAYOUT>
     参考文笔：${styleRefText || '人类化自然叙事'}
     参考排版：${layoutRefText}
