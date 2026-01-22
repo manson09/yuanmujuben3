@@ -1,5 +1,5 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const BASE_URL = https://openrouter.ai/api/v1;
+const BASE_URL = "https://openrouter.ai/api/v1"; 
 
 const MODEL_ID = "google/gemini-3-flash-Preview"; 
 
@@ -17,7 +17,7 @@ const callAI = async (prompt: string, temperature: number, model: string = MODEL
       messages: [{ role: "user", content: prompt }],
       temperature: temperature,
     }),
-      });
+  });
 
   if (!response.ok) {
     const errorData = await response.json();
