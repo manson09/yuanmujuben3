@@ -77,8 +77,11 @@ export const generateStoryOutline = async (
     return await callAI(prompt, 0.85, MODEL_ID);
 };
 
-export const generateScriptSegment = async (
-  batchIndex: number,
+// 修改点 2: 函数参数调整，移除 batchIndex，加入阶段起始/结束集数及该阶段大纲描述
+export const generateScriptStage = async (
+  startEp: number,            // 阶段起始集数
+  endEp: number,              // 阶段结束集数
+  currentStagePlan: string,   // 当前阶段的大纲描述/目标
   mode: 'male' | 'female',
   originalText: string,
   outlineText: string,
@@ -88,64 +91,50 @@ export const generateScriptSegment = async (
   previousSummary: string,
 ) => {
   const totalLength = originalText.length;
-  const totalBatches = 27; 
-  const windowSize = 80000; 
-  const progressRatio = (batchIndex - 1) / totalBatches;
+  // 修改点 3: 逻辑定位改为基于起始集数在总体量（假设80集）中的比例
+  const progressRatio = (startEp - 1) / 80; 
   let startPos = Math.floor(totalLength * progressRatio);
   
-  startPos = Math.max(0, startPos - 20000);
-  let endPos = Math.min(totalLength, startPos + 50000); 
-
+  // 修改点 4: 扩大正文视野至 12 万字，确保覆盖整个阶段所需素材
+  const windowSize = 120000; 
+  startPos = Math.max(0, startPos - 15000); 
   const dynamicSource = originalText.substring(startPos, startPos + windowSize);
-  const startEp = (batchIndex - 1) * 3 + 1;
-  const endEp = batchIndex * 3;
-  const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 20000) : '无往期脚本';
+
+  // 修改点 5: 增加剧本记忆长度至 25000 字符，确保多集衔接不乱
+  const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 25000) : '无往期脚本';
 
 
   const prompt = `
+    任务：编写动漫脚本 【全阶段任务：第 ${startEp} - ${endEp} 集】。
+    本阶段核心目标：${currentStagePlan}
+    频道：${mode === 'male' ? '男频' : '女频'}
+
     【当前剧情档案 - 绝对不可遗忘】：
     ${previousSummary}
 
     【上一集精确结尾】：
-    ${contextHistory.substring(contextHistory.length - 1000)} 
+    ${contextHistory.substring(contextHistory.length - 1200)} 
 
-    任务：编写动漫脚本 第 ${startEp} - ${endEp} 集。
-    频道：${mode === 'male' ? '男频' : '女频'}
+    【⚠️ 衔接接力棒 - 极其重要】：
+    1. 你必须无缝接戏。第 ${startEp} 集的第一场戏，必须直接复读上一集最后那句台词或动作。
+    2. 严禁跳跃时间，严禁出现“次日”，必须是 0 秒衔接。
 
-       【⚠️ 重要输出格式要求】：
-    1. 请先输出 [第 ${startEp} - ${endEp} 集剧本]。
-    2. 剧本结束后，必须另起一行，输出 【本次剧情快照更新】。
-    3. 【本次剧情快照更新】要求：用150字总结截至第 ${endEp} 集，主角的位置、状态、关键矛盾、以及下一集必须立刻处理的突发事件。
-    
-     【⚠️ 衔接接力棒 - 极其重要】：
-    1. 请仔细阅读 <PREVIOUS_CONTEXT> 的【最后三行文字】。
-    2. 你的输出中，第 ${startEp} 集的第一场戏，必须直接复读上一集最后的那句台词或那个动作，以此作为起点开始接戏。
-    3. 严禁出现“次日”、“镜头一转”或换地方，必须是 0 秒无缝衔接。
-    4. 如果上一集停在“项云举起杯子”，这一集的第一句话必须描述“杯子被项云稳稳停在半空”或接续的动作。
+    【阶段生成指令】：
+    1. 你必须一次性输出第 ${startEp} 集到第 ${endEp} 集的完整脚本。
+    2. 严格遵循 <STORY_OUTLINE> 中关于本阶段的剧情路线，不得遗漏核心钩子。
+    3. 每一集必须保持高质量的细节描写，严禁因为集数多而压缩内容。
 
     【角色身份透明化协议 (Character Clarity Protocol)】：
-1. **严禁匿名**：禁止在动作描写或对白中使用“黑袍女子”、“中年文士”、“神秘人”等模糊称呼。
-2. **强制实名**：如果该角色在大纲或原著中有名字，必须直接写名字（例如：▲ 这里的黑袍女子是【青妩】，必须写：▲ 青妩睁眼）。
-3. **身份备注**：如果是新出现的龙套或反派，必须在第一次出现时用括号注明身份（例如：▲ [大内高手]黑衣人、▲ [相府死士]中年人）。
-4. **视觉关联**：所有人物动作必须锚定身份，让导演和演员一眼看出是谁在推动剧情。
+    1. **严禁匿名**：禁止使用“黑袍女子”等模糊称呼，必须实名。
+    2. **强制主语**：每一行动作描写必须直接使用角色全名（如：▲ 项云拔剑）。
 
-     【默认归属规则】
-   - 若动作紧接某角色台词出现，且未明确指向其他人，
-     则该动作必须直接使用该角色名作为主语，而不是代词。
-     必须实名：每一行动作描写必须直接使用角色全名。
-     错误示例： ▲ 他盯着林枫，一字一顿。
-     正确示例： ▲ 项云盯着林枫，一字一顿。
-     多角色识别：如果场景中有多个角色，必须清晰标注谁在做动作（例如：▲ 项云拔剑，林枫后退）。
-     
-
-    请开始编写第 ${startEp} - ${endEp} 集脚本：
-
-    【当前执行进度与关联约束】：
-    1. **阶段定位**：从 <STORY_OUTLINE> 的路线图中确定当前集数对应的原著范围，严禁跨段。
-    2. **扩容系数**：将大纲的一个动作点拆解为多维度的视觉描写，确保节奏扎实。
+    【⚠️ 输出格式要求】：
+    1. 请先输出 [第 ${startEp} - ${endEp} 集完整剧本]。
+    2. 剧本结束后，必须另起一行，输出 【本次剧情快照更新】。
+    3. 【本次剧情快照更新】要求：用200字总结截至第 ${endEp} 集，主角的位置、人际关系状态、关键矛盾、以及下一阶段必须立刻处理的悬念。
 
     【输入资料】：
-      <ORIGINAL_SOURCE>
+    <ORIGINAL_SOURCE>
     ${dynamicSource} 
     </ORIGINAL_SOURCE>
 
@@ -162,8 +151,7 @@ export const generateScriptSegment = async (
     参考排版：${layoutRefText}
     </STYLE_AND_LAYOUT>
 
-    请根据以上“拟人化写作”策略，输出第 ${startEp} - ${endEp} 集脚本。
+    请开始编写第 ${startEp} - ${endEp} 集脚本。
   `;
 return await callAI(prompt, 0.85, MODEL_ID);
 };
-
