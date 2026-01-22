@@ -3,7 +3,7 @@ const BASE_URL = import.meta.env.VITE_GEMINI_BASE_URL;
 
 const MODEL_ID = "google/gemini-3-flash-Preview"; 
 
-const callAI = async (prompt: string, temperature: number) => {
+const callAI = async (prompt: string, temperature: number, model: string = MODEL_ID) => {
   const response = await fetch(`${BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -13,26 +13,27 @@ const callAI = async (prompt: string, temperature: number) => {
       "X-Title": "YuanMu AI Script Workshop",
     },
     body: JSON.stringify({
-      model: MODEL_ID,
+      model: model, 
       messages: [{ role: "user", content: prompt }],
       temperature: temperature,
     }),
-  });
+      });
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error?.message || "Gemini 请求失败");
+    throw new Error(errorData.error?.message || "请求失败");
   }
 
   const data = await response.json();
   return data.choices[0].message.content;
 };
+
 export const generateStoryOutline = async (
   originalText: string,
   layoutRefText: string,
   styleRefText: string
 ) => {     
-   const outlineSource = originalText.substring(0, 400000); 
+  const outlineSource = originalText.substring(0, 300000); 
  const prompt = `
     你现在是一名专业的漫剧总编剧。你的任务是基于【原著小说内容】创作深度大纲。
     
@@ -42,7 +43,7 @@ export const generateStoryOutline = async (
     3. <LAYOUT_TEMPLATE> 标签内仅用于【排版符号参考】。
 
     <ORIGINAL_NOVEL>
-    ${originalText}
+    ${outlineSource}
     </ORIGINAL_NOVEL>
 
     <STYLE_REFERENCE>
@@ -73,11 +74,7 @@ export const generateStoryOutline = async (
     请开始分析并生成。
   `;
 
-  return await callAI(prompt, 0.85, {
-    url: GEMINI_URL,
-    key: GEMINI_KEY,
-    model: OUTLINE_MODEL
-  });
+    return await callAI(prompt, 0.85, MODEL_ID);
 };
 
 export const generateScriptSegment = async (
@@ -96,10 +93,9 @@ export const generateScriptSegment = async (
   let startPos = Math.floor(totalLength * progressRatio);
   
   startPos = Math.max(0, startPos - 10000);
-  let endPos = Math.min(totalLength, startPos + 60000); 
+  let endPos = Math.min(totalLength, startPos + 40000); 
 
   const dynamicSource = originalText.substring(startPos, endPos);
-
   const startEp = (batchIndex - 1) * 3 + 1;
   const endEp = batchIndex * 3;
   const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 2500) : '无往期脚本';
@@ -118,8 +114,7 @@ export const generateScriptSegment = async (
     3. **句式异构**：打破平铺直叙。采用“长句渲染背景+短句爆发动作”的组合。例如：不要写“他很生气地推开了门”，要写“门砰的一声，被那股按捺不住的劲头直接撞在了墙上。他进来了。”
     4. **细节噪点**：在推进剧情时，偶尔加入 1-2 处非核心动作描写（如：拍了拍袖口的灰、瞥了一眼窗外的枯枝），这种非逻辑性的“生活感”是突破 AI 检测的关键。
     5. **视觉克隆**：如果 <LAYOUT_TEMPLATE> 中使用了特殊的括号（如【】）或分段标记，请在输出中完整复刻。禁止生成<LAYOUT_TEMPLATE>没有的符号 
-    6. **抗AI干扰**：保持语言的熵值，避免使用 AI 常用连接词（如“然而”、“因此”）。
-    7. **禁止成语与辞藻堆砌**：除了原著小说有的台词之外，严禁使用任何四字成语（如：气吞山河、惊疑不定、深不见底）。如果必须表达这些意思，请换成大白话（例如：气势很凶、被吓了一跳、黑得看不见底）。
+    6. **禁止成语与辞藻堆砌**：除了原著小说有的台词之外，减少陈词滥调的成语
     
 
     【角色身份透明化协议 (Character Clarity Protocol)】：
@@ -168,6 +163,6 @@ export const generateScriptSegment = async (
 
     请根据以上“拟人化写作”策略，输出第 ${startEp} - ${endEp} 集脚本。
   `;
-
-    });
+return await callAI(prompt, 0.85, MODEL_ID);
 };
+
