@@ -164,6 +164,6 @@ export const generateScriptSegment = async (
 
     请根据以上“拟人化写作”策略，输出第 ${startEp} - ${endEp} 集脚本。
   `;
-return await callAI(prompt, 0.85, "gemini-3-flash-Preview");
+return await callAI(prompt, 0.85, MODEL_ID);
 };
 
