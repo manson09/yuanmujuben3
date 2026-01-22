@@ -77,8 +77,7 @@ export const generateStoryOutline = async (
     return await callAI(prompt, 0.85, MODEL_ID);
 };
 
-// 修复点 2: 函数名改回 generateScriptSegment 以免 build 报错
-// 逻辑修改：将 batchIndex 映射为“阶段”。例如 batchIndex=1 生成 1-10集
+
 export const generateScriptSegment = async (
   batchIndex: number,
   mode: 'male' | 'female',
@@ -90,7 +89,8 @@ export const generateScriptSegment = async (
   previousSummary: string,
 ) => {
   const totalLength = originalText.length;
-  const epsPerStage = 10; 
+
+  const epsPerStage = 5; 
   const startEp = (batchIndex - 1) * epsPerStage + 1;
   const endEp = batchIndex * epsPerStage;
 
@@ -101,26 +101,28 @@ export const generateScriptSegment = async (
   const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 25000) : '无往期脚本';
 
   const prompt = `
-    任务：编写动漫脚本 第 ${startEp} - ${endEp} 集。
+    任务：【深度扩容创作】编写动漫脚本 第 ${startEp} - ${endEp} 集。
     
-    【！！具象化死线协议 - 严禁模糊！！】：
-    1. **禁止使用抽象词**：严禁出现“记忆洪流”、“庞大的信息”、“复杂的知识”、“一股暖流”等万金油描述。
-    2. **必须拆解细节**：如果原著中主角获得了记忆或传承，你必须根据 <ORIGINAL_SOURCE> 拆解成具体的画面、声音或招式。
-       - 错误：大量记忆灌入项云大脑。
-       - 正确示例：▲ 项云识海剧震，他看到了：[三千年前青云剑仙斩断山脉的残影]、[一套名为‘吞天诀’的运行经脉图]、以及[一个满头白发的残魂在耳边的嘶吼]。
-    3. **视觉传达**：所有的“知道”都要转化为“看到”或“听到”。
+    【核心目标：单集体量 2-3 分钟】：
+    1. **扩容比例 (1:10)**：严禁直接翻译原著。你必须将原著的一句描述拆解为多组【动作、神态、环境、潜台词】。
+       - 原著：项云走进大厅，众人震惊。
+       - 你的扩容：[镜头1：项云沾血的靴子踏入大厅]、[镜头2：众人停止议论，杯子摔碎声]、[镜头3：反派瞳孔微缩，手按住刀柄]、[对话：...潜台词交锋...]。
+    2. **冲突密度 (3-Beat-Rule)**：每一集必须包含 2-3 个小型冲突（或情绪反转）。
+    3. **黄金钩子**：每一集的最后一行，必须停在一个巨大的【悬念】或【情绪爆发点】上，强迫观众点击下一集。
+
+    【绝对死线：拒绝魔改】：
+    1. **忠于原著逻辑**：扩容是指“增加视觉表现力”，而不是“乱加剧情”。
+    2. **严禁自创人物**：所有出场人物、关键道具、功法设定必须直接取自 <ORIGINAL_SOURCE>。
+    3. **禁止降智**：保持原著人物的性格深度。
+
+    【单集结构模版（强制执行）】：
+    - [开场]：接续上一集钩子，迅速进入本集主矛盾。
+    - [中段]：1-2 次情绪拉扯或动作交锋，展现原著细节。
+    - [结尾]：爆发本集最大的冲突点，并在悬念处戛然而止。
 
     【衔接与档案】：
-    存档点：${previousSummary || '初次开始'}
-    接戏点：${contextHistory.substring(contextHistory.length - 1000)}
-
-    【角色与动作规则】：
-    - **强制实名**：严禁使用“他、她、它”。动作描述必须带角色全名。
-    - **禁止脑补**：所有剧情必须源自 <ORIGINAL_SOURCE>，严禁自创原著没有的设定。
-
-    【输出格式】：
-    1. [第 ${startEp} - ${endEp} 集剧本]
-    2. 【本次剧情快照更新】（150字，总结目前主角的状态和关键变量）
+    存档点：${previousSummary}
+    接戏点：${contextHistory.substring(contextHistory.length - 1200)}
 
     【输入资料】：
     <ORIGINAL_SOURCE>
@@ -135,12 +137,8 @@ export const generateScriptSegment = async (
     ${contextHistory}
     </PREVIOUS_CONTEXT>
 
-    <STYLE_AND_LAYOUT>
-    参考文笔：${styleRefText || '人类化自然叙事'}
-    参考排版：${layoutRefText}
-    </STYLE_AND_LAYOUT>
-
-    请开始编写。
+    请根据以上要求，以${mode === 'male' ? '男频' : '女频'}爽剧节奏，输出第 ${startEp} - ${endEp} 集。
+    并在文末输出：【本次剧情快照更新】。
   `;
 
   return await callAI(prompt, 0.85, MODEL_ID);
