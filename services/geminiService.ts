@@ -84,38 +84,44 @@ export const generateScriptSegment = async (
   outlineText: string,
   previousScripts: string,
   layoutRefText: string,
-  styleRefText: string
+  styleRefText: string,
+  previousSummary: string,
 ) => {
   const totalLength = originalText.length;
   const totalBatches = 27; 
-
+  const windowSize = 80000; 
   const progressRatio = (batchIndex - 1) / totalBatches;
   let startPos = Math.floor(totalLength * progressRatio);
   
-  startPos = Math.max(0, startPos - 10000);
-  let endPos = Math.min(totalLength, startPos + 40000); 
+  startPos = Math.max(0, startPos - 20000);
+  let endPos = Math.min(totalLength, startPos + 50000); 
 
-  const dynamicSource = originalText.substring(startPos, endPos);
+  const dynamicSource = originalText.substring(startPos, startPos + windowSize);
   const startEp = (batchIndex - 1) * 3 + 1;
   const endEp = batchIndex * 3;
-  const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 2500) : '无往期脚本';
+  const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 20000) : '无往期脚本';
 
 
   const prompt = `
+    【当前剧情档案 - 绝对不可遗忘】：
+    ${previousSummary}
+
+    【上一集精确结尾】：
+    ${contextHistory.substring(contextHistory.length - 1000)} 
+
     任务：编写动漫脚本 第 ${startEp} - ${endEp} 集。
     频道：${mode === 'male' ? '男频' : '女频'}
+
+       【⚠️ 重要输出格式要求】：
+    1. 请先输出 [第 ${startEp} - ${endEp} 集剧本]。
+    2. 剧本结束后，必须另起一行，输出 【本次剧情快照更新】。
+    3. 【本次剧情快照更新】要求：用150字总结截至第 ${endEp} 集，主角的位置、状态、关键矛盾、以及下一集必须立刻处理的突发事件。
     
-    【！！绝对死线指令 - 必须执行！！】
-    1. **剧情忠诚度**：所有台词和动作逻辑必须直接基于 <ORIGINAL_SOURCE>。
-    
-        【核心指令：抗 AI 痕迹与拟人化策略】：
-    1. **用词随机化**：禁止使用“于是”、“竟然”、“不仅如此”、“与此同时”、“但是”等标准 AI 逻辑词。尝试使用更具画面感的动词（如：猛地一滞、嘴角微抽）或更随意的口语引导。
-    2. **标点动力学**：禁止只使用逗号和句号。大量引入省略号(...)表示迟疑、破折号(——)表示思绪中断或反转、感叹号(!)增强冲击力。模仿人类写作时的高低起伏。
-    3. **句式异构**：打破平铺直叙。采用“长句渲染背景+短句爆发动作”的组合。例如：不要写“他很生气地推开了门”，要写“门砰的一声，被那股按捺不住的劲头直接撞在了墙上。他进来了。”
-    4. **细节噪点**：在推进剧情时，偶尔加入 1-2 处非核心动作描写（如：拍了拍袖口的灰、瞥了一眼窗外的枯枝），这种非逻辑性的“生活感”是突破 AI 检测的关键。
-    5. **视觉克隆**：如果 <LAYOUT_TEMPLATE> 中使用了特殊的括号（如【】）或分段标记，请在输出中完整复刻。禁止生成<LAYOUT_TEMPLATE>没有的符号 
-    6. **禁止成语与辞藻堆砌**：除了原著小说有的台词之外，减少陈词滥调的成语
-    
+     【⚠️ 衔接接力棒 - 极其重要】：
+    1. 请仔细阅读 <PREVIOUS_CONTEXT> 的【最后三行文字】。
+    2. 你的输出中，第 ${startEp} 集的第一场戏，必须直接复读上一集最后的那句台词或那个动作，以此作为起点开始接戏。
+    3. 严禁出现“次日”、“镜头一转”或换地方，必须是 0 秒无缝衔接。
+    4. 如果上一集停在“项云举起杯子”，这一集的第一句话必须描述“杯子被项云稳稳停在半空”或接续的动作。
 
     【角色身份透明化协议 (Character Clarity Protocol)】：
 1. **严禁匿名**：禁止在动作描写或对白中使用“黑袍女子”、“中年文士”、“神秘人”等模糊称呼。
@@ -131,11 +137,6 @@ export const generateScriptSegment = async (
      正确示例： ▲ 项云盯着林枫，一字一顿。
      多角色识别：如果场景中有多个角色，必须清晰标注谁在做动作（例如：▲ 项云拔剑，林枫后退）。
      
- 【⚠️ 衔接接力棒 - 极其重要】：
-    1. 请仔细阅读 <PREVIOUS_CONTEXT> 的【最后三行文字】。
-    2. 你的输出中，第 ${startEp} 集的第一场戏，必须直接复读上一集最后的那句台词或那个动作，以此作为起点开始接戏。
-    3. 严禁出现“次日”、“镜头一转”或换地方，必须是 0 秒无缝衔接。
-    4. 如果上一集停在“项云举起杯子”，这一集的第一句话必须描述“杯子被项云稳稳停在半空”或接续的动作。
 
     请开始编写第 ${startEp} - ${endEp} 集脚本：
 
@@ -163,6 +164,6 @@ export const generateScriptSegment = async (
 
     请根据以上“拟人化写作”策略，输出第 ${startEp} - ${endEp} 集脚本。
   `;
-return await callAI(prompt, 0.85, MODEL_ID);
+return await callAI(prompt, 0.85, "gemini-3-flash-Preview");
 };
 
