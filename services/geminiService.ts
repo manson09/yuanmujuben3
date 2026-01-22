@@ -90,46 +90,37 @@ export const generateScriptSegment = async (
   previousSummary: string,
 ) => {
   const totalLength = originalText.length;
-  
-  // 设定每个阶段生成的集数（例如改为 10 集一个阶段）
   const epsPerStage = 10; 
   const startEp = (batchIndex - 1) * epsPerStage + 1;
   const endEp = batchIndex * epsPerStage;
 
-  // 动态定位原著位置（基于阶段进度）
   const progressRatio = (startEp - 1) / 80; 
   let startPos = Math.max(0, Math.floor(totalLength * progressRatio) - 15000);
-  
-  // 扩大正文视野至 12 万字，确保覆盖整个阶段素材
   const windowSize = 120000; 
   const dynamicSource = originalText.substring(startPos, startPos + windowSize);
-
-  // 剧本记忆长度增加到 25000 字符
   const contextHistory = previousScripts ? previousScripts.substring(previousScripts.length - 25000) : '无往期脚本';
 
   const prompt = `
-    任务：【全阶段剧本创作】编写动漫脚本 第 ${startEp} - ${endEp} 集。
-    频道：${mode === 'male' ? '男频' : '女频'}
+    任务：编写动漫脚本 第 ${startEp} - ${endEp} 集。
+    
+    【！！具象化死线协议 - 严禁模糊！！】：
+    1. **禁止使用抽象词**：严禁出现“记忆洪流”、“庞大的信息”、“复杂的知识”、“一股暖流”等万金油描述。
+    2. **必须拆解细节**：如果原著中主角获得了记忆或传承，你必须根据 <ORIGINAL_SOURCE> 拆解成具体的画面、声音或招式。
+       - 错误：大量记忆灌入项云大脑。
+       - 正确示例：▲ 项云识海剧震，他看到了：[三千年前青云剑仙斩断山脉的残影]、[一套名为‘吞天诀’的运行经脉图]、以及[一个满头白发的残魂在耳边的嘶吼]。
+    3. **视觉传达**：所有的“知道”都要转化为“看到”或“听到”。
 
-    【当前剧情档案 - 绝对存档点】：
-    ${previousSummary || '初次开始，请基于大纲第一阶段进行。'}
+    【衔接与档案】：
+    存档点：${previousSummary || '初次开始'}
+    接戏点：${contextHistory.substring(contextHistory.length - 1000)}
 
-    【上一集精确结尾（用于0秒衔接）】：
-    ${contextHistory.substring(contextHistory.length - 1200)} 
+    【角色与动作规则】：
+    - **强制实名**：严禁使用“他、她、它”。动作描述必须带角色全名。
+    - **禁止脑补**：所有剧情必须源自 <ORIGINAL_SOURCE>，严禁自创原著没有的设定。
 
-    【核心指令】：
-    1. 你必须一次性完成第 ${startEp} 到第 ${endEp} 集的完整脚本。
-    2. 第 ${startEp} 集的第一场戏必须与 <PREVIOUS_CONTEXT> 结尾动作无缝接戏。
-    3. 禁止压缩剧情，确保每一集都有充足的对话和视觉描写。
-
-    【角色身份透明化协议】：
-    1. **强制实名**：严禁使用“他、她、黑袍人”，必须直接写名字（如：▲ 项云睁眼）。
-    2. **动作归属**：每一行动作描写必须明确主语。
-
-    【⚠️ 重要输出格式要求】：
-    1. 请先输出 [第 ${startEp} - ${endEp} 集完整剧本]。
-    2. 剧本结束后，必须另起一行，输出 【本次剧情快照更新】。
-    3. 快照更新内容：用150字总结截至第 ${endEp} 集，主角的位置、人际关系状态、关键矛盾。
+    【输出格式】：
+    1. [第 ${startEp} - ${endEp} 集剧本]
+    2. 【本次剧情快照更新】（150字，总结目前主角的状态和关键变量）
 
     【输入资料】：
     <ORIGINAL_SOURCE>
@@ -149,7 +140,7 @@ export const generateScriptSegment = async (
     参考排版：${layoutRefText}
     </STYLE_AND_LAYOUT>
 
-    请开始编写第 ${startEp} - ${endEp} 集脚本。
+    请开始编写。
   `;
 
   return await callAI(prompt, 0.85, MODEL_ID);
