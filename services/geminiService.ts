@@ -1,5 +1,5 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const BASE_URL = import.meta.env.VITE_GEMINI_BASE_URL;
+const BASE_URL = https://openrouter.ai/api/v1;
 
 const MODEL_ID = "google/gemini-3-flash-Preview"; 
 
